@@ -41,11 +41,11 @@ TSCV_SEEDS = [42]            # seed 42 only: 5 folds x 3 seeds x 4 stocks is too
 FILTER_ZERO_VOLUME = False   # the main experiments do NOT drop zero-volume days; keep False for consistency
 
 # (train_start, test_start, test_end, label)   train = [train_start, test_start), test = [test_start, test_end)
-FOLDS = [("2010-01-01", "2019-09-01", "2020-12-31", "COVID-19"),
-         ("2010-01-01", "2020-12-31", "2022-04-01", "COVID aftermath + Russia-Ukraine"),
-         ("2010-01-01", "2022-04-01", "2023-08-01", "Russia-Ukraine + inflation"),
-         ("2010-01-01", "2023-08-01", "2024-11-28", "Egyptian financial/FX crisis"),
-         ("2010-01-01", "2024-11-28", "2026-03-31", "Post-floatation + geopolitical tensions")]
+FOLDS = [("2010-01-01", "2019-09-01", "2020-12-31", "COVID-19 Pandemic"),
+         ("2010-01-01", "2020-12-31", "2022-04-01", "COVID-19 Aftermath + Russia-Ukraine War"),
+         ("2010-01-01", "2022-04-01", "2023-08-01", "Russia-Ukraine War + Inflation"),
+         ("2010-01-01", "2023-08-01", "2024-11-28", "Egyptian Financial/Foreign Exchange Crisis + Gaza War & Red Sea Tensions"),
+         ("2010-01-01", "2024-11-28", "2026-03-31", "Post-Crisis Stabilization")]
 
 CRISES = {"COVID-19 Pandemic":               ("2020-03-01", "2020-12-31"),
           "Russia-Ukraine War & Inflation":  ("2022-02-24", "2023-08-01"),
