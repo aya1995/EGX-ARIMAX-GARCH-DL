@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-SHAP Analysis - Final Return Prediction
-✅ SHAP على الـ Final Return (ARIMAX + DL)
-✅ DL features + EMA_10
+SHAP analysis of the final return forecast of the proposed model AG-LSTM-GRU
+(ARIMAX -> GARCH -> LSTM-GRU), seed 42.
+DL input features: lagged ARIMAX residual, Return_5D, MACD_norm, MACD_sig_norm, ATR_pct, Stochastic,
+EMA_10_norm and GARCH conditional volatility.
 """
 import pandas as pd
 import numpy as np
@@ -273,4 +274,4 @@ plt.show()
 
 print(f"\n✅ Done! Best Model: {best_model_name}")
 print(f"   ✅ DL features: {dl_features}")
-print(f"   ✅ SHAP_FinalReturn_Importance.csv")
+print(f"   ✅ SHAP_FinalReturn_Importance.csv")
