@@ -4,11 +4,14 @@ Time-series cross-validation (5 expanding-window folds) + crisis-period analysis
 for the proposed model AG-LSTM-GRU only (ARIMAX -> GARCH -> LSTM-GRU).
 
 Same as the main experiments (everything comes from common.py):
-  * same features (ARIMAX: 4 exogenous variables; DL: lagged residual + 6 market features + GARCH volatility)
+  * same features:
+      ARIMAX exogenous : Open_return, HL_range_pct, Volume_change, USD_change
+      DL input         : lagged ARIMAX residual + Return_5D, MACD_norm, MACD_sig_norm, ATR_pct, Stochastic,
+                         EMA_10_norm + GARCH conditional volatility (scaled)
   * same Table 3.5 parameters per stock (ARIMAX order, GARCH(p,q), LSTM-GRU units / dropout / batch size)
   * same multi-step GARCH volatility forecast (built from the training window only)
   * same forecast = ARIMAX forecast + predicted residual, clipped to +/-30 %
-  * same long-only strategy: gross and net of 0.15 % per position change
+  * same long-only strategy: results are GROSS (before transaction costs) only
   * ONE seed (42; TSCV_SEEDS at the top): fold values are single runs, the only spread reported is
     the SD ACROSS the five folds. If more seeds are listed, per-fold std over seeds is reported as well.
 
@@ -29,8 +32,8 @@ Output (results/):
 """
 import numpy as np
 import pandas as pd
-from common import (SL, COST_BASE, DECIMALS, Prepared, load_features, fit_arimax, fit_garch,
-                    make_dl_data, build_and_train_dl, dl_forecast, evaluate, set_seed,
+from common import (SL, DECIMALS, Prepared, load_features, fit_arimax, fit_garch,
+                    make_dl_data, build_and_train_dl, dl_forecast, evaluate, set_seed, METRIC_COLS,
                     stocks_from_argv, out_path, data_path, AG_NAMES)
 
 MODEL = "LSTM-GRU"
@@ -50,26 +53,12 @@ CRISES = {"COVID-19 Pandemic":               ("2020-03-01", "2020-12-31"),
           "Gaza War & Red Sea Tensions":     ("2023-10-07", "2024-11-28")}   # overlaps the FX-crisis window
 MIN_OBS = 10
 
-EXTRA = ["MAPE", "SMAPE"]
-COLS = ["RMSE", "MAE", "MAPE", "SMAPE", "DA", "Ret_gross_%", "Sharpe_gross", "N_Trades",
-        "Ret_net_0.15_%", "Sharpe_net_0.15"]
-DEC = {**DECIMALS, "MAPE": 2, "SMAPE": 2}
-
-
-def mape(a, p):
-    m = np.abs(a) > 1e-10
-    return float(np.mean(np.abs((a[m] - p[m]) / a[m])) * 100) if m.any() else np.nan
-
-
-def smape(a, p):
-    d = (np.abs(a) + np.abs(p)) / 2
-    m = d > 1e-10
-    return float(np.mean(np.abs(a[m] - p[m]) / d[m]) * 100) if m.any() else np.nan
+COLS = [c for c in METRIC_COLS if "net" not in c and c != "N_Trades"]   # accuracy + gross return/Sharpe only
+DEC = DECIMALS
 
 
 def metrics(actual, pred):
     r = evaluate(actual, pred)
-    r["MAPE"], r["SMAPE"] = mape(actual, pred), smape(actual, pred)
     return {c: r[c] for c in COLS}
 
 
@@ -121,7 +110,7 @@ def run_stock(stock):
                          "Test_end": str(P.pred_dates[-1].date()), "N_pred": len(pred),
                          **metrics(P.actual_return, pred)})
             print(f"    seed {seed}: RMSE={rows[-1]['RMSE']:.5f} DA={rows[-1]['DA']:.4f} "
-                  f"Ret={rows[-1]['Ret_gross_%']:.2f}% Net={rows[-1]['Ret_net_0.15_%']:.2f}%")
+                  f"Ret={rows[-1]['Ret_gross_%']:.2f}%")
         preds.append(pd.DataFrame(p_rows))
     per_seed = pd.DataFrame(rows)
     pdf = pd.concat(preds, ignore_index=True)
@@ -155,10 +144,9 @@ def run_stock(stock):
         per = pd.DataFrame([metrics(actual, sub[f"Pred_seed{s}"].values) for s in TSCV_SEEDS])
         mu, sd = per.mean(), per.std(ddof=1)
         bh_g = (np.exp(actual.sum()) - 1) * 100
-        bh_n = (np.exp(actual.sum() - COST_BASE) - 1) * 100
         crows.append({"Stock": stock, "Crisis": name, "Start": a, "End": b, "Observations": len(sub),
                       **{f"{c}_mean": mu[c] for c in COLS}, **{f"{c}_std": sd[c] for c in COLS},
-                      "BuyHold_Ret_gross_%": bh_g, "BuyHold_Ret_net_0.15_%": bh_n,
+                      "BuyHold_Ret_gross_%": bh_g,
                       **{f"{c} (mean ± std)": pm(mu[c], sd[c], c) for c in COLS}})
         print(f"  {name}: n={len(sub)} RMSE={mu['RMSE']:.5f} DA={mu['DA']:.4f} "
               f"Ret={mu['Ret_gross_%']:.2f}% (B&H {bh_g:.2f}%)")
