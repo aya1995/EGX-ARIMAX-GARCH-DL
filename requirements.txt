@@ -1,0 +1,20 @@
+# Core numerical / data stack
+numpy
+pandas
+scipy
+scikit-learn
+xgboost
+matplotlib
+
+# Time-series models
+statsmodels
+arch
+
+# Deep learning
+tensorflow
+
+# Explainability (shap_analysis.py)
+shap
+
+# NOTE: before publishing, pin the exact versions you used, e.g.:
+#   pip freeze | grep -iE "numpy|pandas|scipy|scikit-learn|xgboost|matplotlib|statsmodels|arch|tensorflow" > requirements.txt
